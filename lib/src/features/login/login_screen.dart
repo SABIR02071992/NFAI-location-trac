@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:m_app/src/screens/forgotpassword/forgotpassword_screen.dart';
 import 'package:m_app/src/utils/app_colors.dart';
 import 'package:m_app/src/utils/k_button.dart';
 import 'package:m_app/src/utils/k_snackbar.dart';
+
+import '../forgotpassword/forgotpassword_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});

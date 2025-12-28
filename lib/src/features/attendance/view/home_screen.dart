@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
+import 'package:m_app/src/features/teams/view/add_teams_screen.dart';
 import 'package:m_app/src/utils/k_button.dart';
 import '../../../utils/app_colors.dart';
+import '../../../utils/location_helper.dart';
+import '../../../utils/location_permission.dart';
 import '../controller/check_in_notifier.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -22,12 +25,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
 
-    /// simulate GPS
+    /*/// simulate GPS
     Future.microtask(() {
       ref
           .read(checkInProvider.notifier)
           .setLocation(lat: '28.6139', lng: '77.2090');
-    });
+    });*/
   }
 
   @override
@@ -45,8 +48,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
+
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                KButton(
+                  height: 32,
+                  borderRadius: 6,
+                  textSize: 16,
+                  text: 'Add Team',
+                  onPressed: () {
+                    _showCreateTeamDialog(context);
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
 
             const SizedBox(height: 16),
@@ -55,7 +73,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             if (!state.isCheckedIn) _checkInUI(),
 
             /// ================= PUNCH OUT SECTION =================
-            _buildPunchOutSection(),
+            _buildPunchOutSection()
+
           ],
         ),
       ),
@@ -67,31 +86,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _checkInUI() {
     return Column(
       children: [
-        // Temp Mobile View Note
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.blue[50],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Text(
-            "Temp Mobile view: in mobile no need to put in lat lon",
-            style: TextStyle(color: Colors.black87),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        const SizedBox(height: 16),
-
         // Reusable cards
         _buildPunchInCard(
           title: "Individual Ship Punch-In",
           fields: ["Imo number", "MMSi Number", "Reason (optional)"],
           buttonText: "Punch-In",
-          onPressed: () {
-            // In a real app, you would collect the data from the text fields.
-            ref.read(checkInProvider.notifier).checkIn('Punched in from Ship');
+          onPressed: () async {
+
+            // 🔐 Check GPS + permission
+            final isReady =
+            await LocationPermissionService.checkGpsAndPermission();
+
+            if (!isReady) {
+              Get.snackbar(
+                'Location Required',
+                'Please enable GPS to punch in',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              return;
+            }
+
+            // 📍 Get location
+            final position = await LocationHelper.getCurrentLocation();
+
+            if (position == null) {
+              Get.snackbar(
+                'Location Error',
+                'Unable to fetch location',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              return;
+            }
+
+            // ✅ Punch-In
+            ref.read(checkInProvider.notifier).checkIn(
+              desc: 'Punched in Individually',
+              lat: position.latitude,
+              lng: position.longitude,
+            );
           },
+
         ),
 
         const SizedBox(height: 16),
@@ -100,11 +134,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           title: "Individual Punch-In",
           fields: ["Latitude", "Longitude", "Reason (optional)"],
           buttonText: "Punch In",
-          onPressed: () {
-            ref
-                .read(checkInProvider.notifier)
-                .checkIn('Punched in Individually');
+          onPressed: () async {
+            // 🔐 Check GPS + permission
+            final isReady =
+            await LocationPermissionService.checkGpsAndPermission();
+
+            if (!isReady) {
+              Get.snackbar(
+                'Location Required',
+                'Please enable GPS to punch in',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              return;
+            }
+
+            final position = await LocationHelper.getCurrentLocation();
+
+            if (position == null) {
+              Get.snackbar('Location Error', 'Unable to fetch location');
+              return;
+            }
+
+            ref.read(checkInProvider.notifier).checkIn(
+              desc: 'Punched in Individually',
+              lat: position.latitude,
+              lng: position.longitude,
+            );
           },
+
         ),
 
         const SizedBox(height: 16),
@@ -114,9 +171,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           fields: ["Reason (optional)"],
           buttonText: "Punch In",
           dropdownItems: ["Team 1", "Team 2"],
-          onPressed: () {
-            ref.read(checkInProvider.notifier).checkIn('Punched in from Team');
+          onPressed: () async {
+            // 🔐 Check GPS + permission
+            final isReady =
+            await LocationPermissionService.checkGpsAndPermission();
+
+            if (!isReady) {
+              Get.snackbar(
+                'Location Required',
+                'Please enable GPS to punch in',
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              return;
+            }
+            final position = await LocationHelper.getCurrentLocation();
+
+            if (position == null) {
+              Get.snackbar('Location Error', 'Unable to fetch location');
+              return;
+            }
+
+            ref.read(checkInProvider.notifier).checkIn(
+              desc: 'Punched in Individually',
+              lat: position.latitude,
+              lng: position.longitude,
+            );
           },
+
         ),
         const SizedBox(height: 16),
       ],
@@ -136,7 +217,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () async {
+                // 1️⃣ Request GPS + location permission
+                // 🔐 Check GPS + permission
+                final isReady =
+                await LocationPermissionService.checkGpsAndPermission();
+
+                if (!isReady) {
+                  Get.snackbar(
+                    'Location Required',
+                    'Please enable GPS to punch in',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                  return;
+                }
+
+                final position = await LocationHelper.getCurrentLocation();
+
+                if (position == null) {
+                  Get.snackbar('Location Error', 'Unable to fetch location');
+                  return;
+                }
+
+                ref.read(checkInProvider.notifier).checkOut(
+                  desc: 'Punched out',
+                  lat: position.latitude,
+                  lng: position.longitude,
+                );
+              },
+
               child: Card(
                 color: Colors.blue[50],
                 shape: RoundedRectangleBorder(
@@ -352,4 +461,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+
+  void _showCreateTeamDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return const CreateTeamDialog();
+      },
+    );
+  }
 }
+
+

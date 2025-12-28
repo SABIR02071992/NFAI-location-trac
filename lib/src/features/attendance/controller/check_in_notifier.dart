@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_storage/get_storage.dart';
 import '../model/check_in_state.dart';
 
 final checkInProvider =
@@ -9,47 +10,61 @@ StateNotifierProvider<CheckInNotifier, CheckInState>(
 class CheckInNotifier extends StateNotifier<CheckInState> {
   CheckInNotifier() : super(const CheckInState());
 
-  /// Set location
-  void setLocation({required String? lat, required String? lng}) {
-    state = state.copyWith(lat: lat, lng: lng);
-  }
+  final storage = GetStorage();
 
-  /// Check-In
-  void checkIn(String desc) {
-    if (state.lat == null || state.lng == null) {
-      state = state.copyWith(error: 'Location not available');
-      return;
-    }
+  /// ================= CHECK-IN =================
+  void checkIn({
+    required String desc,
+    required double lat,
+    required double lng,
+  }) {
     if (desc.isEmpty) {
       state = state.copyWith(error: 'Check-In description is required');
       return;
     }
 
     state = state.copyWith(
+      lat: lat.toString(),
+      lng: lng.toString(),
       isCheckedIn: true,
+      isCheckedOut: false,
       checkInTime: DateTime.now().toString(),
       checkInDesc: desc,
       error: null,
     );
+
+    /// Optional: persist locally
+    //storage.write('checkInData', state.toJson());
   }
 
-  /// Check-Out
-  void checkOut(String desc) {
+  /// ================= CHECK-OUT =================
+  void checkOut({
+    required String desc,
+    required double lat,
+    required double lng,
+  }) {
     if (desc.isEmpty) {
       state = state.copyWith(error: 'Check-Out description is required');
       return;
     }
 
     state = state.copyWith(
+      lat: lat.toString(),
+      lng: lng.toString(),
       isCheckedOut: true,
       checkOutTime: DateTime.now().toString(),
       checkOutDesc: desc,
       error: null,
     );
+
+    /// Optional: persist locally
+    //storage.write('checkOutData', state.toJson());
   }
 
-  /// Reset for next check-in
+  /// ================= RESET =================
   void reset() {
     state = const CheckInState();
+    storage.erase();
   }
 }
+

@@ -1,90 +1,16 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:m_app/src/utils/app_colors.dart';
-import 'package:m_app/src/utils/k_button.dart';
-import '../controller/team_controller.dart';
 
-class TeamScreen extends ConsumerWidget {
-  const TeamScreen({super.key});
+import '../../../utils/app_colors.dart';
+
+class CreateTeamDialog extends StatefulWidget {
+  const CreateTeamDialog({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final teams = ref.watch(teamProvider); // Watch Riverpod state
-
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                KButton(
-                  height: 32,
-                  borderRadius: 6,
-                  textSize: 16,
-                  text: 'Add Team',
-                  onPressed: () {
-                    _showCreateTeamDialog(context);
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // <-- Wrap ListView in Expanded
-            Expanded(
-              child: teams.isEmpty
-                  ? const Center(child: Text('No teams added yet'))
-                  : ListView.builder(
-                      itemCount: teams.length,
-                      itemBuilder: (context, index) {
-                        final team = teams[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            title: Text(
-                              team.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Mobile: ${team.mobile}'),
-                                Text('Email: ${team.email}'),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showCreateTeamDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return const _CreateTeamDialog();
-      },
-    );
-  }
+  State<CreateTeamDialog> createState() => CreateTeamDialogState();
 }
 
-class _CreateTeamDialog extends StatefulWidget {
-  const _CreateTeamDialog({Key? key}) : super(key: key);
-
-  @override
-  State<_CreateTeamDialog> createState() => _CreateTeamDialogState();
-}
-
-class _CreateTeamDialogState extends State<_CreateTeamDialog> {
+class CreateTeamDialogState extends State<CreateTeamDialog> {
   final TextEditingController searchController = TextEditingController();
   final List<String> dummyTeams = [
     'Team Alpha',

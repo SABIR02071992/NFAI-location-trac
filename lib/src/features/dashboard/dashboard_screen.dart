@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:m_app/src/features/attendance/view/home_screen.dart';
-import 'package:m_app/src/features/profile/view/profile_screen.dart';
-import 'package:m_app/src/features/teams/view/team_screen.dart';
 import 'package:m_app/src/utils/app_colors.dart';
 import 'package:m_app/src/utils/k_drawer.dart';
 
@@ -12,8 +10,8 @@ class DashboardController extends GetxController {
 
   final List<Widget> pages = const [
     HomeScreen(),
-    TeamScreen(),
-    ProfileScreen(),
+    //TeamScreen(),
+    //ProfileScreen(),
   ];
 
   final List<String> titles = ['Home', 'Teams', 'Profile'];
@@ -65,7 +63,7 @@ class DashboardScreen extends StatelessWidget {
         ),
         drawer: const KDrawer(),
         body: controller.pages[controller.currentIndex.value],
-        bottomNavigationBar: NavigationBar(
+        /*bottomNavigationBar: NavigationBar(
           elevation: 10,
 
           indicatorColor: AppColors.secondaryColor,
@@ -81,7 +79,7 @@ class DashboardScreen extends StatelessWidget {
               label: 'Home',
             ),
 
-            NavigationDestination(
+            *//*NavigationDestination(
               icon: Icon(Icons.list_alt_outlined),
               selectedIcon: Icon(Icons.list_alt),
               label: 'Team',
@@ -90,9 +88,9 @@ class DashboardScreen extends StatelessWidget {
               icon: Icon(Icons.person_outline),
               selectedIcon: Icon(Icons.person),
               label: 'Profile',
-            ),
+            ),*//*
           ],
-        ),
+        ),*/
       ),
     );
   }
