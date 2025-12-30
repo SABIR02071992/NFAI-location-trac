@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:m_app/src/utils/app_colors.dart';
 import 'package:m_app/src/utils/k_assets.dart';
+
+import '../../storage/KStorage.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,10 +16,11 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-
   late AnimationController _controller;
   late Animation<double> _scaleAnim;
   late Animation<Offset> _slideAnim;
+
+  final storage = GetStorage();
 
   @override
   void initState() {
@@ -42,10 +46,21 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.repeat(reverse: true);
 
-    // Navigate to login
+    // Navigate after splash
     Timer(const Duration(seconds: 4), () {
-      Get.offNamed('/login');
+      _navigateNext();
     });
+  }
+
+  void _navigateNext() {
+    final token = storage.read(KStorageKey.accessToken);
+    if (token != null && token.isNotEmpty) {
+      // User is logged in → Dashboard
+      Get.offNamed('/dashboard');
+    } else {
+      // Not logged in → Login
+      Get.offNamed('/login');
+    }
   }
 
   @override

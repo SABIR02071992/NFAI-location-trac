@@ -1,10 +1,12 @@
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:m_app/src/utils/app_colors.dart';
 import 'package:m_app/src/utils/k_button.dart';
 import 'package:m_app/src/utils/k_snackbar.dart';
-
 import '../forgotpassword/forgotpassword_screen.dart';
+import 'controller/login_notifier.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -49,29 +51,42 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-class LoginForm extends StatefulWidget {
+class LoginForm extends ConsumerStatefulWidget {
   const LoginForm({super.key});
 
   @override
-  State<LoginForm> createState() => _LoginFormState();
+  ConsumerState<LoginForm> createState() => _LoginFormState();
 }
 
-class _LoginFormState extends State<LoginForm> {
+class _LoginFormState extends ConsumerState<LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
-
   bool _obscureText = true;
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
-      Get.offNamed('/dashboard');
-      KSnackBar.showSuccess('Login Successful!');
+      // Call Login API
+      await ref.read(loginProvider.notifier).login(
+        email: _email.text.trim(),
+        password: _password.text.trim(),
+      );
+
+      final state = ref.read(loginProvider);
+
+      if (state.isLoggedIn) {
+        Get.offNamed('/dashboard');
+        KSnackBar.showSuccess('Login Successful!');
+      } else if (state.error != null) {
+        KSnackBar.showError(state.error!);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loginState = ref.watch(loginProvider); // watch loginProvider for loader
+
     return Form(
       key: _formKey,
       child: Column(
@@ -98,12 +113,9 @@ class _LoginFormState extends State<LoginForm> {
               suffixIcon: const Icon(Icons.tune),
             ),
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Enter your email';
-              } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$')
-                  .hasMatch(value)) {
-                return 'Enter a valid email';
-              }
+              if (value == null || value.isEmpty) return 'Enter your email';
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$')
+                  .hasMatch(value)) return 'Enter a valid email';
               return null;
             },
           ),
@@ -138,27 +150,40 @@ class _LoginFormState extends State<LoginForm> {
               ),
             ),
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Enter your password';
-              } else if (value.length < 6) {
-                return 'Password must be at least 6 characters';
-              }
+              if (value == null || value.isEmpty) return 'Enter your password';
+              if (value.length < 6) return 'Password must be at least 6 characters';
               return null;
             },
           ),
           const SizedBox(height: 30),
 
-          // Sign In Button
+          // Sign In Button with loader
           SizedBox(
             width: double.infinity,
-            child: KButton(
-              text: 'Sign In',
-              onPressed: _submit,
-              color: const Color(0xFF3B82F6), // Blue color from screenshot
-              height: 48,
-              borderRadius: 8,
+            height: 48,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                KButton(
+                  text: 'Sign In',
+                  onPressed: loginState.isLoading ? null : _submit,
+                  color: const Color(0xFF3B82F6),
+                  height: 48,
+                  borderRadius: 8,
+                ),
+                if (loginState.isLoading)
+                  const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+              ],
             ),
           ),
+
           const SizedBox(height: 16),
 
           // Forgot Password

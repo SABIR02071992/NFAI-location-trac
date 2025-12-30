@@ -25,12 +25,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
 
-    /*/// simulate GPS
-    Future.microtask(() {
-      ref
-          .read(checkInProvider.notifier)
-          .setLocation(lat: '28.6139', lng: '77.2090');
-    });*/
   }
 
   @override
@@ -42,7 +36,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(checkInProvider);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -70,137 +63,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 16),
 
             /// ================= CHECK-IN UI =================
-            if (!state.isCheckedIn) _checkInUI(),
+            _individualShipPunching('Individual Ship Punch-In'),
+            _individualPunching('Individual Punch-In'),
+            _teamFieldPunching('Team Field Punch-In'),
+            _teamShipPunching('Team Ship Punch-In'),
 
             /// ================= PUNCH OUT SECTION =================
-            _buildPunchOutSection()
+            _buildPunchOutSection(),
+
 
           ],
         ),
       ),
-    );
-  }
-
-  // ================= NEW CHECK-IN UI WIDGETS =================
-
-  Widget _checkInUI() {
-    return Column(
-      children: [
-        // Reusable cards
-        _buildPunchInCard(
-          title: "Individual Ship Punch-In",
-          fields: ["Imo number", "MMSi Number", "Reason (optional)"],
-          buttonText: "Punch-In",
-          onPressed: () async {
-
-            // 🔐 Check GPS + permission
-            final isReady =
-            await LocationPermissionService.checkGpsAndPermission();
-
-            if (!isReady) {
-              Get.snackbar(
-                'Location Required',
-                'Please enable GPS to punch in',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-              return;
-            }
-
-            // 📍 Get location
-            final position = await LocationHelper.getCurrentLocation();
-
-            if (position == null) {
-              Get.snackbar(
-                'Location Error',
-                'Unable to fetch location',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-              return;
-            }
-
-            // ✅ Punch-In
-            ref.read(checkInProvider.notifier).checkIn(
-              desc: 'Punched in Individually',
-              lat: position.latitude,
-              lng: position.longitude,
-            );
-          },
-
-        ),
-
-        const SizedBox(height: 16),
-
-        _buildPunchInCard(
-          title: "Individual Punch-In",
-          fields: ["Latitude", "Longitude", "Reason (optional)"],
-          buttonText: "Punch In",
-          onPressed: () async {
-            // 🔐 Check GPS + permission
-            final isReady =
-            await LocationPermissionService.checkGpsAndPermission();
-
-            if (!isReady) {
-              Get.snackbar(
-                'Location Required',
-                'Please enable GPS to punch in',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-              return;
-            }
-
-            final position = await LocationHelper.getCurrentLocation();
-
-            if (position == null) {
-              Get.snackbar('Location Error', 'Unable to fetch location');
-              return;
-            }
-
-            ref.read(checkInProvider.notifier).checkIn(
-              desc: 'Punched in Individually',
-              lat: position.latitude,
-              lng: position.longitude,
-            );
-          },
-
-        ),
-
-        const SizedBox(height: 16),
-
-        _buildPunchInCard(
-          title: "Team Field Punch-In",
-          fields: ["Reason (optional)"],
-          buttonText: "Punch In",
-          dropdownItems: ["Team 1", "Team 2"],
-          onPressed: () async {
-            // 🔐 Check GPS + permission
-            final isReady =
-            await LocationPermissionService.checkGpsAndPermission();
-
-            if (!isReady) {
-              Get.snackbar(
-                'Location Required',
-                'Please enable GPS to punch in',
-                snackPosition: SnackPosition.BOTTOM,
-              );
-              return;
-            }
-            final position = await LocationHelper.getCurrentLocation();
-
-            if (position == null) {
-              Get.snackbar('Location Error', 'Unable to fetch location');
-              return;
-            }
-
-            ref.read(checkInProvider.notifier).checkIn(
-              desc: 'Punched in Individually',
-              lat: position.latitude,
-              lng: position.longitude,
-            );
-          },
-
-        ),
-        const SizedBox(height: 16),
-      ],
     );
   }
 
@@ -388,80 +262,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildPunchInCard({
-    required String title,
-    required List<String> fields,
-    required String buttonText,
-    List<String>? dropdownItems,
-    required VoidCallback onPressed,
-  }) {
-    String? dropdownValue = dropdownItems?.first;
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            if (dropdownItems != null) ...[
-              DropdownButtonFormField<String>(
-                value: dropdownValue,
-                decoration: const InputDecoration(
-                  labelText: 'Select Team',
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                ),
-                items: dropdownItems.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  // In a real app, you'd manage this state.
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-            ...fields.map((label) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: TextField(
-                  decoration: InputDecoration(
-                    labelText: label,
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-            SizedBox(
-              width: double.infinity,
-              child: KButton(
-                text: buttonText,
-                onPressed: onPressed,
-                color: AppColors.primaryColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showCreateTeamDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -469,6 +269,164 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       builder: (context) {
         return const CreateTeamDialog();
       },
+    );
+  }
+
+  Widget _individualShipPunching(String label) {
+    return SizedBox(
+      height: 80,
+      child: InkWell(
+        onTap: () {
+          Get.toNamed('/punch_in_individual_ship');
+        },
+        child: Card(
+          elevation: 0.1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.login, // 🔐 Login icon
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12), // space between icon & text
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _individualPunching(String label,) {
+    return SizedBox(
+      height: 80,
+      child: InkWell(
+        onTap: () {
+         // Get.toNamed('/punch_in_individual_ship');
+        },
+        child: Card(
+          elevation: 0.1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.login, // 🔐 Login icon
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12), // space between icon & text
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  Widget _teamFieldPunching(String label,) {
+    return SizedBox(
+      height: 80,
+      child: InkWell(
+        onTap: () {
+          //Get.toNamed('/punch_in_individual_ship');
+        },
+        child: Card(
+          elevation: 0.1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.login, // 🔐 Login icon
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12), // space between icon & text
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  Widget _teamShipPunching(String label,) {
+    return SizedBox(
+      height: 80,
+      child: InkWell(
+        onTap: () {
+          //Get.toNamed('/punch_in_individual_ship');
+        },
+        child: Card(
+          elevation: 0.1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.login, // 🔐 Login icon
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12), // space between icon & text
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

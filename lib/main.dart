@@ -5,6 +5,7 @@ import 'package:m_app/src/features/attendance/splash/splash_screen.dart' show Sp
 import 'package:m_app/src/features/dashboard/dashboard_screen.dart';
 import 'package:m_app/src/features/login/login_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:m_app/src/features/punchin/view/individual_ship_punch_in_screen.dart';
 import 'package:m_app/src/utils/app_colors.dart';
 import 'package:m_app/src/utils/app_theme.dart';
 
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/splash', page: () => const SplashScreen()),
         GetPage(name: '/login', page: () => const LoginScreen()),
         GetPage(name: '/dashboard', page: () => const DashboardScreen()),
+        GetPage(name: '/punch_in_individual_ship', page: () => const IndividualShipPunchInScreen()),
       ],
     );
   }
