@@ -8,6 +8,9 @@ class KStorageKey{
   static const userId="USER_ID";
   static const designation="DESIGNATION";
   static const userEmail="EMP_EMAIL";
+  static const teamId="TEAM_ID";
+  static const sessionId="SESSION_ID";
+  static const selectedTeamId="SELECTED_ID";
 
 
 }

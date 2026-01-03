@@ -9,23 +9,23 @@ import '../../../utils/location_helper.dart';
 import '../../../utils/location_permission.dart';
 import '../controller/punch_in_notifier.dart';
 
-class IndividualShipPunchInScreen extends ConsumerStatefulWidget {
-  const IndividualShipPunchInScreen({super.key});
+class TeamFieldPunchIn extends ConsumerStatefulWidget {
+  const TeamFieldPunchIn({super.key});
 
   @override
-  ConsumerState<IndividualShipPunchInScreen> createState() =>
-      _IndividualShipPunchInScreenState();
+  ConsumerState<TeamFieldPunchIn> createState() =>
+      _TeamFieldPunchInState();
 }
 
-class _IndividualShipPunchInScreenState
-    extends ConsumerState<IndividualShipPunchInScreen> {
+class _TeamFieldPunchInState
+    extends ConsumerState<TeamFieldPunchIn> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(punchInProvider);
 
     return Scaffold(
       appBar: const KAppBar(
-        title: 'Individual Ship Punch-In',
+        title: 'Team Field Punch-In',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -41,9 +41,11 @@ class _IndividualShipPunchInScreenState
   Widget _checkInUI() {
     return Column(
       children: [
+
         _buildPunchInCard(
-          title: "Individual Ship Punch-In",
-          fields: ["IMO Number", "MMSI Number", "Reason (required)*"],
+          title: "Team Field Punch-In",
+          fields: ["Reason (required)*"],
+          dropdownItems: ["Team 1", "Team 2"],
           buttonText: "Punch-In",
           onPressed: _handlePunchIn,
         ),
@@ -68,8 +70,6 @@ class _IndividualShipPunchInScreenState
 
     // 📍 Get location
     final position = await LocationHelper.getCurrentLocation();
-    print('#Latlong${position}');
-
 
     if (position == null) {
       Get.snackbar(
@@ -79,11 +79,9 @@ class _IndividualShipPunchInScreenState
       );
       return;
     }
-    print('#Latlong${position.altitude}');
-    debugPrint('test');
 
     // ✅ Punch-In API call
-    ref.read(punchInProvider.notifier).individualShipPunchIn(
+    ref.read(punchInProvider.notifier).teamFieldPunchIn(
       description: 'Punched in Individually',
       lat: position.latitude,
       lng: position.longitude,

@@ -22,22 +22,19 @@ class KDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('Home'),
-            onTap: () => Get.back(),
-          ),
-          ListTile(
             leading: const Icon(Icons.shopping_bag),
-            title: const Text('Products'),
+            title: const Text('Teams'),
 
             onTap: () {
-              KToast.showInfo('Coming soon');
-              Get.back();
+              Get.back(); // close drawer
+              Get.toNamed('/teams_screen');
+
+
             },
           ),
           ListTile(
             leading: const Icon(Icons.list_alt),
-            title: const Text('Orders'),
+            title: const Text('Users'),
             onTap: () {},
           ),
           ListTile(

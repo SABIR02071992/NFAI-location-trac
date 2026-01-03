@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:m_app/src/features/attendance/view/home_screen.dart';
 import 'package:m_app/src/utils/app_colors.dart';
 import 'package:m_app/src/utils/k_drawer.dart';
+
+import '../home/view/home_screen.dart';
 
 // ===== Controller =====
 class DashboardController extends GetxController {
@@ -10,8 +11,7 @@ class DashboardController extends GetxController {
 
   final List<Widget> pages = const [
     HomeScreen(),
-    //TeamScreen(),
-    //ProfileScreen(),
+
   ];
 
   final List<String> titles = ['Home', 'Teams', 'Profile'];

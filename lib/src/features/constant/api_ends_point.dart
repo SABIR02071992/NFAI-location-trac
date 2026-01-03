@@ -6,11 +6,18 @@ class ApiEndpoints {
   static const login = '/api/login';
   static const logout = '/api/logout';
 
-  // Check-In / Check-Out
-  static const checkIn = '/api/check-in';
-  static const checkOut = '/api/check-out';
+  // Punch-In / Punch-Out
 
-  // Projects / Attendance / Other APIs
-  static const projects = '/api/projects';
-  static const attendance = '/api/attendance';
+  static const punchIn = '/api/punch_in';
+  static const punchOut = '/api/punch-out';
+
+  // Team lead / team
+  static const teamLead = '/api/user/teamlead/teams';
+  static const getTeam = '/api/get_teams';
+
+  // Create team
+
+  static const createTeam = '/api/create_team';
+
+
 }

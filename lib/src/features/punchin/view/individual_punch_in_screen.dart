@@ -9,23 +9,24 @@ import '../../../utils/location_helper.dart';
 import '../../../utils/location_permission.dart';
 import '../controller/punch_in_notifier.dart';
 
-class IndividualShipPunchInScreen extends ConsumerStatefulWidget {
-  const IndividualShipPunchInScreen({super.key});
+class IndividualPunchIn extends ConsumerStatefulWidget {
+  const IndividualPunchIn({super.key});
 
   @override
-  ConsumerState<IndividualShipPunchInScreen> createState() =>
-      _IndividualShipPunchInScreenState();
+  ConsumerState<IndividualPunchIn> createState() =>
+      _IndividualPunchInState();
 }
 
-class _IndividualShipPunchInScreenState
-    extends ConsumerState<IndividualShipPunchInScreen> {
+class _IndividualPunchInState
+    extends ConsumerState<IndividualPunchIn> {
+  final TextEditingController des = TextEditingController();
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(punchInProvider);
 
     return Scaffold(
       appBar: const KAppBar(
-        title: 'Individual Ship Punch-In',
+        title: 'Individual Punch-In',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -41,9 +42,10 @@ class _IndividualShipPunchInScreenState
   Widget _checkInUI() {
     return Column(
       children: [
+
         _buildPunchInCard(
-          title: "Individual Ship Punch-In",
-          fields: ["IMO Number", "MMSI Number", "Reason (required)*"],
+          title: "Individual Punch-In",
+          fields: ["Reason (required)*"],
           buttonText: "Punch-In",
           onPressed: _handlePunchIn,
         ),
@@ -68,8 +70,6 @@ class _IndividualShipPunchInScreenState
 
     // 📍 Get location
     final position = await LocationHelper.getCurrentLocation();
-    print('#Latlong${position}');
-
 
     if (position == null) {
       Get.snackbar(
@@ -79,12 +79,10 @@ class _IndividualShipPunchInScreenState
       );
       return;
     }
-    print('#Latlong${position.altitude}');
-    debugPrint('test');
 
     // ✅ Punch-In API call
-    ref.read(punchInProvider.notifier).individualShipPunchIn(
-      description: 'Punched in Individually',
+    ref.read(punchInProvider.notifier).individualPunchIn(
+      description: des.text.trim(),
       lat: position.latitude,
       lng: position.longitude,
     );

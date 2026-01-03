@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
-import 'package:m_app/src/features/teams/view/add_teams_screen.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:m_app/src/features/storage/KStorage.dart';
 import 'package:m_app/src/utils/k_button.dart';
 import '../../../utils/app_colors.dart';
 import '../../../utils/location_helper.dart';
 import '../../../utils/location_permission.dart';
-import '../controller/check_in_notifier.dart';
+import '../../punchin/controller/punch_in_notifier.dart';
+import '../../teams/view/create_team_dialog.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -18,12 +20,15 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final checkOutController = TextEditingController();
+  final storage = GetStorage();
+
 
   final String userName = 'Sabir';
 
   @override
   void initState() {
     super.initState();
+
 
   }
 
@@ -36,6 +41,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
+    final String role = storage.read(KStorageKey.userRole) ?? '';
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -44,7 +50,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+           /* Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 KButton(
@@ -58,15 +64,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 16),*/
 
             const SizedBox(height: 16),
 
             /// ================= CHECK-IN UI =================
-            _individualShipPunching('Individual Ship Punch-In'),
-            _individualPunching('Individual Punch-In'),
-            _teamFieldPunching('Team Field Punch-In'),
-            _teamShipPunching('Team Ship Punch-In'),
+
+            if (role == 'Team Lead') ...[
+              _individualShipPunching('Individual Ship Punch-In'),
+              _individualPunching('Individual Punch-In'),
+              _teamFieldPunching('Team Field Punch-In'),
+              _teamShipPunching('Team Ship Punch-In'),
+            ] else ...[
+              _individualShipPunching('Individual Ship Punch-In'),
+              _individualPunching('Individual Punch-In'),
+            ],
+
 
             /// ================= PUNCH OUT SECTION =================
             _buildPunchOutSection(),
@@ -79,7 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildPunchOutSection() {
-    final state = ref.watch(checkInProvider);
+    final state = ref.watch(punchInProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -113,11 +126,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   return;
                 }
 
-                ref.read(checkInProvider.notifier).checkOut(
+                /// here we have implement checkout logic
+
+                /*ref.read(checkInProvider.notifier).checkOut(
                   desc: 'Punched out',
                   lat: position.latitude,
                   lng: position.longitude,
-                );
+                );*/
               },
 
               child: Card(
@@ -317,7 +332,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       height: 80,
       child: InkWell(
         onTap: () {
-         // Get.toNamed('/punch_in_individual_ship');
+          Get.toNamed('/individual_punch_in');
         },
         child: Card(
           elevation: 0.1,
@@ -351,12 +366,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+
   Widget _teamFieldPunching(String label,) {
     return SizedBox(
       height: 80,
       child: InkWell(
         onTap: () {
-          //Get.toNamed('/punch_in_individual_ship');
+          Get.toNamed('/team_field_punch_in');
         },
         child: Card(
           elevation: 0.1,
@@ -390,12 +406,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+
   Widget _teamShipPunching(String label,) {
     return SizedBox(
       height: 80,
       child: InkWell(
         onTap: () {
-          //Get.toNamed('/punch_in_individual_ship');
+          Get.toNamed('/team_ship_punch_in');
         },
         child: Card(
           elevation: 0.1,

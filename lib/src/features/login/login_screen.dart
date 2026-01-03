@@ -2,11 +2,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:m_app/src/utils/app_colors.dart';
 import 'package:m_app/src/utils/k_button.dart';
 import 'package:m_app/src/utils/k_snackbar.dart';
 import '../forgotpassword/forgotpassword_screen.dart';
+import '../punchin/controller/get_team_notifier.dart';
+import '../storage/KStorage.dart';
 import 'controller/login_notifier.dart';
+
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -63,6 +67,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
   bool _obscureText = true;
+  final storage = GetStorage();
+
 
   void _submit() async {
     if (_formKey.currentState!.validate()) {
@@ -77,11 +83,19 @@ class _LoginFormState extends ConsumerState<LoginForm> {
       if (state.isLoggedIn) {
         Get.offNamed('/dashboard');
         KSnackBar.showSuccess('Login Successful!');
+
+        // Call Get Team API
+        await ref.read(getTeamProvider.notifier).getAllTeam();
+        debugPrint('TEAM_ID ${storage.read(KStorageKey.selectedTeamId)}');
+
+
       } else if (state.error != null) {
         KSnackBar.showError(state.error!);
+        ///print('TEAM_ID $storage.read(KStorageKey.selectedTeamId)');
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

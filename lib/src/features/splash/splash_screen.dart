@@ -5,7 +5,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:m_app/src/utils/app_colors.dart';
 import 'package:m_app/src/utils/k_assets.dart';
 
-import '../../storage/KStorage.dart';
+import '../storage/KStorage.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
