@@ -18,6 +18,7 @@ class ApiEndpoints {
   // Create team
 
   static const createTeam = '/api/create_team';
+  static const getLiveSession = '/api/live_session_field';
 
 
 }

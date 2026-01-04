@@ -10,6 +10,7 @@ class KStorageKey{
   static const userEmail="EMP_EMAIL";
   static const teamId="TEAM_ID";
   static const sessionId="SESSION_ID";
+  static const liveSessionId="LIVE_SESSION_ID";
   static const selectedTeamId="SELECTED_ID";
 
 

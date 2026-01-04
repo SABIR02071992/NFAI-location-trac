@@ -4,12 +4,13 @@ import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:m_app/src/features/storage/KStorage.dart';
-import 'package:m_app/src/utils/k_button.dart';
 import '../../../utils/app_colors.dart';
 import '../../../utils/location_helper.dart';
 import '../../../utils/location_permission.dart';
 import '../../punchin/controller/punch_in_notifier.dart';
-import '../../teams/view/create_team_dialog.dart';
+import '../../punchout/controller/get_live_session_notifier.dart';
+import '../../punchout/controller/punch_out_notifier.dart';
+import '../../punchout/model/live_session_state.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -29,7 +30,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
 
-
+    // ✅ HomeScreen open hote hi API call
+    Future.microtask(() {
+      ref.read(liveSessionProvider.notifier).getLiveSession();
+    });
   }
 
   @override
@@ -50,21 +54,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-           /* Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                KButton(
-                  height: 32,
-                  borderRadius: 6,
-                  textSize: 16,
-                  text: 'Add Team',
-                  onPressed: () {
-                    _showCreateTeamDialog(context);
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),*/
 
             const SizedBox(height: 16),
 
@@ -202,7 +191,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       "Action",
                       "",
                       valueWidget: OutlinedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          _callPunchOutAPI();
+
+                        },
                         icon: const Icon(
                           Icons.logout,
                           color: Colors.red,
@@ -274,16 +266,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],
       ),
-    );
-  }
-
-  void _showCreateTeamDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return const CreateTeamDialog();
-      },
     );
   }
 
@@ -445,6 +427,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _callPunchOutAPI() {
+    ref.read(punchOutProvider.notifier).punchOut(
+      lat: 0.0,
+      lon: 0.0,
+    );
+  }
+  void _callLiveSessionAPI() {
+    ref.read(liveSessionProvider.notifier).getLiveSession();
   }
 }
 

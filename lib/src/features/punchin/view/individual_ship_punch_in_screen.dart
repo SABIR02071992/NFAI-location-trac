@@ -19,6 +19,17 @@ class IndividualShipPunchInScreen extends ConsumerStatefulWidget {
 
 class _IndividualShipPunchInScreenState
     extends ConsumerState<IndividualShipPunchInScreen> {
+
+  // 🔹 Controllers
+  final TextEditingController imoController = TextEditingController();
+  final TextEditingController mmsiController = TextEditingController();
+  final TextEditingController reasonController = TextEditingController();
+
+  // 🔹 Validation flags
+  bool _imoError = false;
+  bool _mmsiError = false;
+  bool _reasonError = false;
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(punchInProvider);
@@ -43,7 +54,6 @@ class _IndividualShipPunchInScreenState
       children: [
         _buildPunchInCard(
           title: "Individual Ship Punch-In",
-          fields: ["IMO Number", "MMSI Number", "Reason (required)*"],
           buttonText: "Punch-In",
           onPressed: _handlePunchIn,
         ),
@@ -51,55 +61,46 @@ class _IndividualShipPunchInScreenState
     );
   }
 
-  /// 🔥 Common punch-in logic
+  /// 🔥 Punch-in with validation
   Future<void> _handlePunchIn() async {
-    // 🔐 Check GPS + permission
-    final isReady =
-    await LocationPermissionService.checkGpsAndPermission();
+    bool hasError = false;
 
-    if (!isReady) {
-      Get.snackbar(
-        'Location Required',
-        'Please enable GPS to punch in',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
+    if (imoController.text.trim().isEmpty) {
+      _imoError = true;
+      hasError = true;
     }
 
-    // 📍 Get location
-    final position = await LocationHelper.getCurrentLocation();
-    print('#Latlong${position}');
-
-
-    if (position == null) {
-      Get.snackbar(
-        'Location Error',
-        'Unable to fetch location',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
+    if (mmsiController.text.trim().isEmpty) {
+      _mmsiError = true;
+      hasError = true;
     }
-    print('#Latlong${position.altitude}');
-    debugPrint('test');
+
+    if (reasonController.text.trim().isEmpty) {
+      _reasonError = true;
+      hasError = true;
+    }
+
+    setState(() {});
+
+    if (hasError) return;
+
 
     // ✅ Punch-In API call
     ref.read(punchInProvider.notifier).individualShipPunchIn(
-      description: 'Punched in Individually',
-      lat: position.latitude,
-      lng: position.longitude,
+      description: reasonController.text.trim(),
+      lat: 0.0,
+      lng: 0.0,
+      mmsiNumber: '',
+      imoNumber: '',
+      shipName: '',
     );
   }
 
   Widget _buildPunchInCard({
     required String title,
-    required List<String> fields,
     required String buttonText,
-    List<String>? dropdownItems,
     required VoidCallback onPressed,
   }) {
-    String? dropdownValue =
-    dropdownItems != null ? dropdownItems.first : null;
-
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -119,36 +120,51 @@ class _IndividualShipPunchInScreenState
             ),
             const SizedBox(height: 16),
 
-            if (dropdownItems != null) ...[
-              DropdownButtonFormField<String>(
-                value: dropdownValue,
-                decoration: const InputDecoration(
-                  labelText: 'Select Team',
-                  border: OutlineInputBorder(),
-                ),
-                items: dropdownItems
-                    .map(
-                      (e) => DropdownMenuItem(
-                    value: e,
-                    child: Text(e),
-                  ),
-                )
-                    .toList(),
-                onChanged: (value) {
-                  dropdownValue = value;
+            // IMO NUMBER
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: TextField(
+                controller: imoController,
+                onChanged: (_) {
+                  if (_imoError) setState(() => _imoError = false);
                 },
+                decoration: InputDecoration(
+                  labelText: 'IMO Number',
+                  border: const OutlineInputBorder(),
+                  errorText: _imoError ? 'IMO Number is required' : null,
+                ),
               ),
-              const SizedBox(height: 16),
-            ],
+            ),
 
-            ...fields.map(
-                  (label) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: TextField(
-                  decoration: InputDecoration(
-                    labelText: label,
-                    border: const OutlineInputBorder(),
-                  ),
+            // MMSI NUMBER
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: TextField(
+                controller: mmsiController,
+                onChanged: (_) {
+                  if (_mmsiError) setState(() => _mmsiError = false);
+                },
+                decoration: InputDecoration(
+                  labelText: 'MMSI Number',
+                  border: const OutlineInputBorder(),
+                  errorText: _mmsiError ? 'MMSI Number is required' : null,
+                ),
+              ),
+            ),
+
+            // REASON
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: TextField(
+                controller: reasonController,
+                onChanged: (_) {
+                  if (_reasonError) setState(() => _reasonError = false);
+                },
+                decoration: InputDecoration(
+                  labelText: 'Reason (required)*',
+                  border: const OutlineInputBorder(),
+                  errorText:
+                  _reasonError ? 'Reason is required' : null,
                 ),
               ),
             ),
@@ -165,5 +181,13 @@ class _IndividualShipPunchInScreenState
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    imoController.dispose();
+    mmsiController.dispose();
+    reasonController.dispose();
+    super.dispose();
   }
 }

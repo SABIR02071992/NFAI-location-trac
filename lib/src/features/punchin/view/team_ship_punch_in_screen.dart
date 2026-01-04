@@ -9,16 +9,29 @@ import '../../../utils/location_helper.dart';
 import '../../../utils/location_permission.dart';
 import '../controller/punch_in_notifier.dart';
 
+
 class TeamShipPunchIn extends ConsumerStatefulWidget {
   const TeamShipPunchIn({super.key});
 
   @override
-  ConsumerState<TeamShipPunchIn> createState() =>
-      _TeamShipPunchInState();
+  ConsumerState<TeamShipPunchIn> createState() => _TeamShipPunchInState();
 }
 
-class _TeamShipPunchInState
-    extends ConsumerState<TeamShipPunchIn> {
+class _TeamShipPunchInState extends ConsumerState<TeamShipPunchIn> {
+  // 🔹 Controllers
+  final TextEditingController imoController = TextEditingController();
+  final TextEditingController mmsiController = TextEditingController();
+  final TextEditingController reasonController = TextEditingController();
+
+  // 🔹 Dropdown
+  String? selectedTeam;
+
+  // 🔹 Validation flags
+  bool _teamError = false;
+  bool _imoError = false;
+  bool _mmsiError = false;
+  bool _reasonError = false;
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(punchInProvider);
@@ -52,9 +65,32 @@ class _TeamShipPunchInState
     );
   }
 
-  /// 🔥 Common punch-in logic
+  /// 🔥 Punch-In Logic with validation
   Future<void> _handlePunchIn() async {
-    // 🔐 Check GPS + permission
+    bool hasError = false;
+
+    if (selectedTeam == null) {
+      _teamError = true;
+      hasError = true;
+    }
+    if (imoController.text.trim().isEmpty) {
+      _imoError = true;
+      hasError = true;
+    }
+    if (mmsiController.text.trim().isEmpty) {
+      _mmsiError = true;
+      hasError = true;
+    }
+    if (reasonController.text.trim().isEmpty) {
+      _reasonError = true;
+      hasError = true;
+    }
+
+    setState(() {});
+
+    if (hasError) return;
+
+    // 🔐 Location check
     final isReady =
     await LocationPermissionService.checkGpsAndPermission();
 
@@ -67,7 +103,6 @@ class _TeamShipPunchInState
       return;
     }
 
-    // 📍 Get location
     final position = await LocationHelper.getCurrentLocation();
 
     if (position == null) {
@@ -79,9 +114,9 @@ class _TeamShipPunchInState
       return;
     }
 
-    // ✅ Punch-In API call
+    // ✅ API call
     ref.read(punchInProvider.notifier).teamShipPunchIn(
-      description: 'Punched in Individually',
+      description: reasonController.text.trim(),
       lat: position.latitude,
       lng: position.longitude,
     );
@@ -94,9 +129,6 @@ class _TeamShipPunchInState
     List<String>? dropdownItems,
     required VoidCallback onPressed,
   }) {
-    String? dropdownValue =
-    dropdownItems != null ? dropdownItems.first : null;
-
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -116,12 +148,15 @@ class _TeamShipPunchInState
             ),
             const SizedBox(height: 16),
 
+            // 🔽 DROPDOWN WITH ERROR
             if (dropdownItems != null) ...[
               DropdownButtonFormField<String>(
-                value: dropdownValue,
-                decoration: const InputDecoration(
+                value: selectedTeam,
+                decoration: InputDecoration(
                   labelText: 'Select Team',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
+                  errorText:
+                  _teamError ? 'Please select a team' : null,
                 ),
                 items: dropdownItems
                     .map(
@@ -132,23 +167,60 @@ class _TeamShipPunchInState
                 )
                     .toList(),
                 onChanged: (value) {
-                  dropdownValue = value;
+                  setState(() {
+                    selectedTeam = value;
+                    _teamError = false;
+                  });
                 },
               ),
               const SizedBox(height: 16),
             ],
 
-            ...fields.map(
-                  (label) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: TextField(
-                  decoration: InputDecoration(
-                    labelText: label,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
+            // IMO
+            TextField(
+              controller: imoController,
+              onChanged: (_) {
+                if (_imoError) setState(() => _imoError = false);
+              },
+              decoration: InputDecoration(
+                labelText: fields[0],
+                border: const OutlineInputBorder(),
+                errorText:
+                _imoError ? 'IMO Number is required' : null,
               ),
             ),
+            const SizedBox(height: 16),
+
+            // MMSI
+            TextField(
+              controller: mmsiController,
+              onChanged: (_) {
+                if (_mmsiError) setState(() => _mmsiError = false);
+              },
+              decoration: InputDecoration(
+                labelText: fields[1],
+                border: const OutlineInputBorder(),
+                errorText:
+                _mmsiError ? 'MMSI Number is required' : null,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Reason
+            TextField(
+              controller: reasonController,
+              onChanged: (_) {
+                if (_reasonError)
+                  setState(() => _reasonError = false);
+              },
+              decoration: InputDecoration(
+                labelText: fields[2],
+                border: const OutlineInputBorder(),
+                errorText:
+                _reasonError ? 'Reason is required' : null,
+              ),
+            ),
+            const SizedBox(height: 16),
 
             SizedBox(
               width: double.infinity,
@@ -162,5 +234,13 @@ class _TeamShipPunchInState
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    imoController.dispose();
+    mmsiController.dispose();
+    reasonController.dispose();
+    super.dispose();
   }
 }
