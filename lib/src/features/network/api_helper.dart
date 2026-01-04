@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:m_app/src/features/storage/KStorage.dart';
-
 import '../constant/api_ends_point.dart';
+import '../storage/KStorage.dart';
 
 class ApiHelper {
   static final _storage = GetStorage();
@@ -16,52 +15,35 @@ class ApiHelper {
     };
   }
 
-  // Generic POST request
- /* static Future<Map<String, dynamic>> post(String endpoint,
-      {Map<String, dynamic>? body}) async {
-    final response = await http.post(
-      Uri.parse(ApiEndpoints.baseUrl + endpoint),
-      headers: _headers(),
-      body: jsonEncode(body),
-    );
-
-    final data = jsonDecode(response.body);
-    return {
-      'statusCode': response.statusCode,
-      'data': data,
-    };
-  }*/
   static Future<Map<String, dynamic>> post(
-      String endpoint, {
-        Map<String, dynamic>? body,
-      }) async {
+    String endpoint, {
+    Map<String, dynamic>? body,
+  }) async {
+    final uri = Uri.parse(ApiEndpoints.baseUrl + endpoint);
+
+    print('🌍 POST → $uri');
+    print('📦 BODY → $body');
+
     final response = await http.post(
-      Uri.parse(ApiEndpoints.baseUrl + endpoint),
+      uri,
       headers: _headers(),
       body: body == null ? null : jsonEncode(body),
     );
 
-    final data = jsonDecode(response.body);
-    return {
-      'statusCode': response.statusCode,
-      'data': data,
-    };
-  }
-
-
-  // Generic GET request
-  static Future<Map<String, dynamic>> get(String endpoint) async {
-    final response = await http.get(
-      Uri.parse(ApiEndpoints.baseUrl + endpoint),
-      headers: _headers(),
+    print('📥 STATUS → ${response.statusCode}');
+    print(
+      '📥 RAW BODY → ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}',
     );
 
-    final data = jsonDecode(response.body);
-    return {
-      'statusCode': response.statusCode,
-      'data': data,
-    };
-  }
+    // 🚨 NOT JSON → THROW CLEAN ERROR
+    if (!response.headers['content-type']!.contains('application/json')) {
+      throw Exception(
+        'Server returned non-JSON response (status ${response.statusCode})',
+      );
+    }
 
-// Optional: PUT, DELETE methods can be added similarly
+    final decoded = jsonDecode(response.body);
+
+    return {'statusCode': response.statusCode, 'data': decoded};
+  }
 }

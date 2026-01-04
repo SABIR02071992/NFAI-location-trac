@@ -4,6 +4,7 @@ class CreatedTeamModel {
   final String teamLeadId;
   final String teamLeadName;
   final DateTime createdAt;
+  final List<dynamic> members; // ✅ ADD THIS
 
   CreatedTeamModel({
     required this.id,
@@ -11,15 +12,17 @@ class CreatedTeamModel {
     required this.teamLeadId,
     required this.teamLeadName,
     required this.createdAt,
+    required this.members, // ✅ ADD THIS
   });
 
   factory CreatedTeamModel.fromJson(Map<String, dynamic> json) {
     return CreatedTeamModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      teamLeadId: json['team_lead_id'] as String,
-      teamLeadName: json['team_lead_name'] as String,
+      id: json['team_id'] ?? json['id'],
+      name: json['team_name'] ?? json['name'],
+      teamLeadId: json['team_lead_id'],
+      teamLeadName: json['team_lead_name'],
       createdAt: DateTime.parse(json['created_at']),
+      members: json['members'] ?? [], // ✅ ADD THIS
     );
   }
 
@@ -30,7 +33,7 @@ class CreatedTeamModel {
       'team_lead_id': teamLeadId,
       'team_lead_name': teamLeadName,
       'created_at': createdAt.toIso8601String(),
+      'members': members,
     };
   }
 }
-
