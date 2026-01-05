@@ -20,7 +20,6 @@ class LoginNotifier extends StateNotifier<LoginState> {
     required String email,
     required String password,
   }) async {
-    // Validate inputs
     if (email.isEmpty || password.isEmpty) {
       state = state.copyWith(error: 'Email & password required');
       return;
@@ -44,12 +43,6 @@ class LoginNotifier extends StateNotifier<LoginState> {
         final data = response['data'];
         final user = data['user'];
 
-        final String userName = user['name'];
-        final String email = user['email'];
-        final String designation = user['designation'];
-        final String roleName = user['assignments'][0]['role_name'];
-        final String userId = user['id'];
-
         state = state.copyWith(
           isLoading: false,
           isLoggedIn: true,
@@ -58,28 +51,27 @@ class LoginNotifier extends StateNotifier<LoginState> {
         );
 
         storage.write(KStorageKey.accessToken, data['access_token']);
-        storage.write(KStorageKey.userName, userName);
-        storage.write(KStorageKey.userEmail, email);
-        storage.write(KStorageKey.userRole, roleName);
-        storage.write(KStorageKey.designation, designation);
-        storage.write(KStorageKey.userId, userId);
+        storage.write(KStorageKey.userName, user['name']);
+        storage.write(KStorageKey.userEmail, user['email']);
+        storage.write(KStorageKey.userRole, user['assignments'][0]['role_name']);
+        storage.write(KStorageKey.designation, user['designation']);
+        storage.write(KStorageKey.userId, user['id']);
 
-        debugPrint('✅ LOGIN SUCCESS');
-        debugPrint('TEAM_ID ${storage.read(KStorageKey.selectedTeamId)}');
       } else {
-        /// ❌ API ERROR
+        final apiError = response['data']?['error'];
+
         state = state.copyWith(
           isLoading: false,
-          error: response['data']?['message'] ?? 'Login failed',
+          error: apiError ?? 'Invalid email or password',
         );
       }
+
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Network error',
+        error: 'Unable to login. Please try again.',
       );
     }
-
   }
 
   /// ================= LOGOUT =================

@@ -83,15 +83,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
       if (state.isLoggedIn) {
         Get.offNamed('/dashboard');
         KSnackBar.showSuccess('Login Successful!');
-
-        // Call Get Team API
-        await ref.read(getTeamProvider.notifier).getAllTeam();
-        debugPrint('TEAM_ID ${storage.read(KStorageKey.selectedTeamId)}');
-
-
       } else if (state.error != null) {
-        KSnackBar.showError(state.error!);
-        ///print('TEAM_ID $storage.read(KStorageKey.selectedTeamId)');
+        KSnackBar.showError(state.error!); // ✅ API error yahin show hoga
       }
     }
   }
