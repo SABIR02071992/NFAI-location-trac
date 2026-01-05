@@ -13,6 +13,8 @@ import 'package:m_app/src/features/teams/view/teams_screen.dart';
 import 'package:m_app/src/utils/app_colors.dart';
 import 'package:m_app/src/utils/app_theme.dart';
 
+import 'src/features/teams/view/test_teeam screen.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -48,6 +50,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/team_field_punch_in', page: () => const TeamFieldPunchIn()),
         GetPage(name: '/team_ship_punch_in', page: () => const TeamShipPunchIn()),
         GetPage(name: '/teams_screen', page: () => const TeamsScreen()),
+        GetPage(name: '/teams_screen1', page: () => const TeamsScreen1()),
       ],
     );
   }

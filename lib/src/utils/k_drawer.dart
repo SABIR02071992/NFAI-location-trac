@@ -30,7 +30,8 @@ class KDrawer extends StatelessWidget {
 
             onTap: () {
               Get.back(); // close drawer
-              Get.toNamed('/teams_screen');
+              //Get.toNamed('/teams_screen');
+              Get.toNamed('/teams_screen1');
 
 
             },

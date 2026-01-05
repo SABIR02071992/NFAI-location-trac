@@ -14,11 +14,19 @@ class ApiEndpoints {
   // Team lead / team
   static const teamLead = '/api/user/teamlead/teams';
   static const getTeam = '/api/get_teams';
+  static const getUsers = '/api/get_users';
+
 
   // Create team
 
   static const createTeam = '/api/create_team';
   static const getLiveSession = '/api/live_session_field';
+
+
+  static const createTeamMember = '/api/create_team_members';
+  static const removeTeamMember = '/api/remove_team_member';
+  static const removeTeam = '/api/remove_team';
+
 
 
 }

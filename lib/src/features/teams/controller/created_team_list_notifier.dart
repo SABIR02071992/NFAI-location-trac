@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:m_app/src/features/teams/model/created_team_model.dart';
 
 import '../../constant/api_ends_point.dart';
 import '../../network/api_helper.dart';
 import '../model/created_team_list_state.dart';
+import '../model/created_team_model.dart';
 
 
 final createdTeamListProvider =
@@ -16,41 +16,7 @@ class CreatedTeamListNotifier
   CreatedTeamListNotifier() : super(const CreatedTeamListState());
 
   /// ================= GET TEAMS =================
-  /*Future<void> fetchTeams() async {
-    try {
-      state = state.copyWith(isLoading: true, error: null);
 
-      final response = await ApiHelper.post(
-        ApiEndpoints.getTeam,
-      );
-
-      if (response['statusCode'] == 200 &&
-          response['data'] != null &&
-          response['data']['teams'] != null) {
-
-        final List list = response['data']['teams'];
-
-        final List<CreatedTeamModel> teams = list
-            .map((e) => CreatedTeamModel.fromJson(e))
-            .toList();
-
-        state = state.copyWith(
-          isLoading: false,
-          teams: teams,
-        );
-      } else {
-        state = state.copyWith(
-          isLoading: false,
-          error: 'Failed to load teams',
-        );
-      }
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Network error',
-      );
-    }
-  }*/
   Future<void> fetchTeams() async {
     print('fetchTeams() called');
     state = state.copyWith(isLoading: true, error: null);

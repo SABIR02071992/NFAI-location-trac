@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:m_app/src/features/teams/model/created_team_model.dart';
 import 'package:m_app/src/utils/app_colors.dart';
 import 'package:m_app/src/utils/k_appbar.dart';
 import '../../../utils/k_button.dart';
+import '../../storage/KStorage.dart';
 import '../controller/created_team_list_notifier.dart';
 import 'create_team_dialog.dart';
 import '../model/team_model.dart';
@@ -17,6 +19,7 @@ class TeamsScreen extends ConsumerStatefulWidget {
 }
 
 class _TeamsScreenState extends ConsumerState<TeamsScreen> {
+  final storage = GetStorage();
 
   @override
   void initState() {
@@ -39,33 +42,28 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen> {
           children: [
 
             /// ================= ADD TEAM BUTTON =================
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                KButton(
-                  height: 32,
-                  borderRadius: 6,
-                  textSize: 16,
-                  text: 'Add Team',
-                  /*onPressed: () async {
-                    // Open create team dialog
-                    await _showCreateTeamDialog(context);
+            if(storage.read(KStorageKey.userRole) == 'Team Lead')...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  KButton(
+                    height: 32,
+                    borderRadius: 6,
+                    textSize: 16,
+                    text: 'Add Team',
+                    onPressed: () async {
+                      final result = await _showCreateTeamDialog(context);
 
-                    // 🔥 Refresh teams after dialog closes
-                    ref.read(createdTeamListProvider.notifier).fetchTeams();
-                  },*/
-                  onPressed: () async {
-                    final result = await _showCreateTeamDialog(context);
+                      // Dialog success ke saath close hua
+                      if (result == true) {
+                        ref.read(createdTeamListProvider.notifier).fetchTeams();
+                      }
+                    },
 
-                    // ✅ Dialog success ke saath close hua
-                    if (result == true) {
-                      ref.read(createdTeamListProvider.notifier).fetchTeams();
-                    }
-                  },
-
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
 
             const SizedBox(height: 16),
 
