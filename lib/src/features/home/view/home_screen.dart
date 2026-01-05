@@ -1,16 +1,15 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:m_app/src/features/storage/KStorage.dart';
 import '../../../utils/app_colors.dart';
-import '../../../utils/location_helper.dart';
-import '../../../utils/location_permission.dart';
-import '../../punchin/controller/punch_in_notifier.dart';
+import '../../../utils/k_button.dart';
 import '../../punchout/controller/get_live_session_notifier.dart';
 import '../../punchout/controller/punch_out_notifier.dart';
+import '../../punchout/model/live_session_api_response_model.dart';
 import '../../punchout/model/live_session_state.dart';
+import '../../storage/KStorage.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -20,424 +19,264 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final checkOutController = TextEditingController();
   final storage = GetStorage();
-
-
-  final String userName = 'Sabir';
+  Timer? _timer;
+  bool _isPunchOutLoading = false;
 
   @override
   void initState() {
     super.initState();
 
-    // ✅ HomeScreen open hote hi API call
     Future.microtask(() {
+      ref.read(liveSessionProvider.notifier).getLiveSession();
+    });
+
+    _timer = Timer.periodic(const Duration(seconds: 10), (_) {
       ref.read(liveSessionProvider.notifier).getLiveSession();
     });
   }
 
   @override
   void dispose() {
-    checkOutController.dispose();
+    _timer?.cancel();
     super.dispose();
+  }
+
+  // ================= ACTIVE SESSION FINDER =================
+  ActiveSession? _getActiveSession(
+      String userId, ActiveSessionState state) {
+
+    if (state.sessions.isEmpty || userId.isEmpty) return null;
+
+    for (final session in state.sessions) {
+      final type = session.sessionType?.toLowerCase() ?? '';
+
+      // -------- INDIVIDUAL --------
+      if (!type.contains('team') &&
+          session.user?.id == userId) {
+        return session;
+      }
+
+      // -------- TEAM --------
+      if (type.contains('team') && session.teamInfo != null) {
+
+        // Team Lead
+        if (session.user?.id == userId) {
+          return session;
+        }
+
+        // Team Member
+        if (session.teamInfo!.members
+            .any((m) => m.id == userId)) {
+          return session;
+        }
+      }
+    }
+    return null;
   }
 
   // ================= BUILD =================
   @override
   Widget build(BuildContext context) {
-    final String role = storage.read(KStorageKey.userRole) ?? '';
+    final userId = (storage.read(KStorageKey.userId) ?? '').toString();
+    final state = ref.watch(liveSessionProvider);
+
+    /// ✅ Loader sirf first time
+    if (state.isLoading && state.sessions.isEmpty) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final activeSession = _getActiveSession(userId, state);
+    final type = activeSession?.sessionType?.toLowerCase() ?? '';
+
+    /// -------- ROLE DETECTION --------
+    final isIndividualPunchIn =
+        activeSession != null &&
+            !type.contains('team') &&
+            activeSession.user?.id == userId;
+
+    print("❌ isIndividualPunchIn: $isIndividualPunchIn");
+
+
+
+    final isTeamLead =
+        activeSession != null &&
+            type.contains('team') &&
+            activeSession.user?.id == userId;
+    print("❌ isTeamLead: $isTeamLead");
+
+    final isTeamMember =
+        activeSession != null &&
+            type.contains('team') &&
+            activeSession.teamInfo != null &&
+            activeSession.teamInfo!.members
+                .any((m) => m.id == userId);
+
+    print("❌ isTeamMember: $isTeamMember");
 
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 12),
 
-            const SizedBox(height: 16),
+            /// ================= NO ACTIVE SESSION =================
+            if (activeSession == null) ...[
+              _sectionTitle("Punch-In Options"),
 
-            /// ================= CHECK-IN UI =================
+              _punchInCard(
+                label: "Individual Ship Punch-In",
+                route: "/punch_in_individual_ship",
+              ),
+              _punchInCard(
+                label: "Individual Punch-In",
+                route: "/individual_punch_in",
+              ),
+              _punchInCard(
+                label: "Team Field Punch-In",
+                route: "/team_field_punch_in",
+              ),
+              _punchInCard(
+                label: "Team Ship Punch-In",
+                route: "/team_ship_punch_in",
+              ),
+            ]
 
-            if (role == 'Team Lead') ...[
-              _individualShipPunching('Individual Ship Punch-In'),
-              _individualPunching('Individual Punch-In'),
-              _teamFieldPunching('Team Field Punch-In'),
-              _teamShipPunching('Team Ship Punch-In'),
-            ] else ...[
-              _individualShipPunching('Individual Ship Punch-In'),
-              _individualPunching('Individual Punch-In'),
-            ],
+            /// ================= PUNCH-OUT =================
+            else if (isIndividualPunchIn || isTeamLead) ...[
+              _sectionTitle("Active Session"),
+              _punchOutCard(activeSession),
+            ]
 
-
-            /// ================= PUNCH OUT SECTION =================
-            _buildPunchOutSection(),
-
-
+            /// ================= TEAM MEMBER =================
+            else if (isTeamMember) ...[
+                _sectionTitle("Active Team Session"),
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const SizedBox(
+                    height: 100,
+                    child: Center(
+                      child: Text(
+                        "You are LoggedIn as a Team, only team lead can punch you out",
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPunchOutSection() {
-    final state = ref.watch(punchInProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              "Punch Out",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            TextButton(
-              onPressed: () async {
-                // 1️⃣ Request GPS + location permission
-                // 🔐 Check GPS + permission
-                final isReady =
-                await LocationPermissionService.checkGpsAndPermission();
-
-                if (!isReady) {
-                  Get.snackbar(
-                    'Location Required',
-                    'Please enable GPS to punch in',
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
-                  return;
-                }
-
-                final position = await LocationHelper.getCurrentLocation();
-
-                if (position == null) {
-                  Get.snackbar('Location Error', 'Unable to fetch location');
-                  return;
-                }
-
-                /// here we have implement checkout logic
-
-                /*ref.read(checkInProvider.notifier).checkOut(
-                  desc: 'Punched out',
-                  lat: position.latitude,
-                  lng: position.longitude,
-                );*/
-              },
-
-              child: Card(
-                color: Colors.blue[50],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(1),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.only(
-                    left: 8,
-                    right: 8,
-                    top: 4,
-                    bottom: 4,
-                  ),
-                  child: Text("Refresh"),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        if (state.isCheckedIn)
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildPunchOutInfoColumn(
-                      "User / Team",
-                      "Maintenance Team A",
-                    ),
-                    _buildPunchOutInfoColumn(
-                      "Type",
-                      "",
-                      valueWidget: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(40),
-                        ),
-                        child: const Text(
-                          "TEAM-FIELD",
-                          style: TextStyle(
-                            color: Colors.white,
-                            letterSpacing: 1,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ),
-                    _buildPunchOutInfoColumn("Department", "Maintenance"),
-                    _buildPunchOutInfoColumn("Base Location", "Mumbai"),
-                    _buildPunchOutInfoColumn(
-                      "Punch-In Time",
-                      "19 Dec at 07:45 AM",
-                    ),
-                    _buildPunchOutInfoColumn(
-                      "Action",
-                      "",
-                      valueWidget: OutlinedButton.icon(
-                        onPressed: () {
-                          _callPunchOutAPI();
-
-                        },
-                        icon: const Icon(
-                          Icons.logout,
-                          color: Colors.red,
-                          size: 16,
-                        ),
-                        label: const Text(
-                          "Punch Out",
-                          style: TextStyle(color: Colors.red, fontSize: 14),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.red.withOpacity(0.1),
-                          side: BorderSide.none,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 10,
-                          ),
-
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          )
-        else
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const SizedBox(
-              width: double.infinity,
-              height: 100,
-              child: Center(child: Text("No session available for punch-out")),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildPunchOutInfoColumn(
-    String header,
-    String value, {
-    Widget? valueWidget,
-  }) {
+  // ================= UI HELPERS =================
+  Widget _sectionTitle(String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            header,
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 4),
-          valueWidget ??
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ],
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 
-  Widget _individualShipPunching(String label) {
-    return SizedBox(
-      height: 80,
-      child: InkWell(
-        onTap: () {
-          Get.toNamed('/punch_in_individual_ship');
-        },
-        child: Card(
-          elevation: 0.1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.login, // 🔐 Login icon
-                  color: AppColors.primary,
-                  size: 24,
-                ),
-                const SizedBox(width: 12), // space between icon & text
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 16,
-                    ),
+  Widget _punchInCard({
+    required String label,
+    required String route,
+  }) {
+    return InkWell(
+      onTap: () => Get.toNamed(route),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              const Icon(Icons.login, color: AppColors.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: AppColors.primary,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _individualPunching(String label,) {
-    return SizedBox(
-      height: 80,
-      child: InkWell(
-        onTap: () {
-          Get.toNamed('/individual_punch_in');
-        },
-        child: Card(
-          elevation: 0.1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.login, // 🔐 Login icon
-                  color: AppColors.primary,
-                  size: 24,
+  // ================= PUNCH OUT CARD =================
+  Widget _punchOutCard(ActiveSession session) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Name: ${session.user?.name ?? '-'}"),
+            Text("Department: ${session.user?.department ?? '-'}"),
+            Text("Designation: ${session.user?.designation ?? '-'}"),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 36,
+              width: 150,
+              child: _isPunchOutLoading
+                  ? const Center(
+                child: SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                const SizedBox(width: 12), // space between icon & text
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
+              )
+                  : KButton(
+                text: "Punch-Out",
+                onPressed: () =>
+                    _callPunchOutAPI(session.sessionId),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _teamFieldPunching(String label,) {
-    return SizedBox(
-      height: 80,
-      child: InkWell(
-        onTap: () {
-          Get.toNamed('/team_field_punch_in');
-        },
-        child: Card(
-          elevation: 0.1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.login, // 🔐 Login icon
-                  color: AppColors.primary,
-                  size: 24,
-                ),
-                const SizedBox(width: 12), // space between icon & text
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  // ================= API =================
+  Future<void> _callPunchOutAPI(String sessionId) async {
+    setState(() => _isPunchOutLoading = true);
 
-  Widget _teamShipPunching(String label,) {
-    return SizedBox(
-      height: 80,
-      child: InkWell(
-        onTap: () {
-          Get.toNamed('/team_ship_punch_in');
-        },
-        child: Card(
-          elevation: 0.1,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.login, // 🔐 Login icon
-                  color: AppColors.primary,
-                  size: 24,
-                ),
-                const SizedBox(width: 12), // space between icon & text
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+    try {
+      await ref.read(punchOutProvider.notifier).punchOut(
+        lat: 0.0,
+        lon: 0.0,
+        sessionId: sessionId,
+      );
 
-  void _callPunchOutAPI() {
-    ref.read(punchOutProvider.notifier).punchOut(
-      lat: 0.0,
-      lon: 0.0,
-    );
-  }
-  void _callLiveSessionAPI() {
-    ref.read(liveSessionProvider.notifier).getLiveSession();
+      ref.read(liveSessionProvider.notifier).getLiveSession();
+    } finally {
+      setState(() => _isPunchOutLoading = false);
+    }
   }
 }
-
-

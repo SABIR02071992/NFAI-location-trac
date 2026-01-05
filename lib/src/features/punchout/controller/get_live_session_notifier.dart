@@ -37,7 +37,7 @@ class LiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
         // ✅ USER ID STORE (from response)
         if (result.activeSessions.isNotEmpty) {
-          final liveSessionId = result.activeSessions.first.user.id;
+          final liveSessionId = result.activeSessions.first.user?.id;
           storage.write(KStorageKey.liveSessionId, liveSessionId);
           debugPrint('LiveSession USER ID stored => $liveSessionId');
         }

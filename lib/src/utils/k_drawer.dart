@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:m_app/src/utils/app_colors.dart';
+import '../features/storage/KStorage.dart';
 import 'k_toast.dart';
 
 class KDrawer extends StatelessWidget {
@@ -8,6 +10,7 @@ class KDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final storage = GetStorage();
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -46,7 +49,12 @@ class KDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Logout', style: TextStyle(color: Colors.red)),
-            onTap: () {},
+            onTap: () {
+              final token = storage.remove(KStorageKey.accessToken);
+                // Not logged in → Login
+                Get.offNamed('/login');
+
+            },
           ),
         ],
       ),

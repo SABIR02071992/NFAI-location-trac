@@ -6,44 +6,59 @@ class ActiveLiveSessionResponse {
   factory ActiveLiveSessionResponse.fromJson(Map<String, dynamic> json) {
     return ActiveLiveSessionResponse(
       activeSessions: (json['active_sessions'] as List? ?? [])
-          .map((e) => ActiveSession.fromJson(e))
+          .where((e) => e != null)
+          .map((e) => ActiveSession.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
   }
 }
 
 class ActiveSession {
-  final Location location;
-  final DateTime punchInTime;
+  final Location? location;
+  final DateTime? punchInTime;
   final String remarks;
-  final ReportingManager reportingManager;
+  final ReportingManager? reportingManager;
   final String sessionId;
   final String sessionType;
-  final TeamInfo teamInfo;
-  final ReportingManager user;
+  final TeamInfo? teamInfo;
+  final ReportingManager? user;
 
   ActiveSession({
-    required this.location,
-    required this.punchInTime,
+    this.location,
+    this.punchInTime,
     required this.remarks,
-    required this.reportingManager,
+    this.reportingManager,
     required this.sessionId,
     required this.sessionType,
-    required this.teamInfo,
-    required this.user,
+    this.teamInfo,
+    this.user,
   });
 
   factory ActiveSession.fromJson(Map<String, dynamic> json) {
     return ActiveSession(
-      sessionId: json['session_id'],
-      sessionType: json['session_type'],
+      sessionId: json['session_id']?.toString() ?? '',
+      sessionType: json['session_type']?.toString() ?? '',
       remarks: json['remarks'] ?? '',
-      punchInTime: DateTime.parse(json['punch_in_time']),
-      location: Location.fromJson(json['location']),
-      reportingManager:
-      ReportingManager.fromJson(json['reporting_manager']),
-      teamInfo: TeamInfo.fromJson(json['team_info']),
-      user: ReportingManager.fromJson(json['user']),
+
+      punchInTime: json['punch_in_time'] != null
+          ? DateTime.tryParse(json['punch_in_time'])
+          : null,
+
+      location: json['location'] != null
+          ? Location.fromJson(json['location'])
+          : null,
+
+      reportingManager: json['reporting_manager'] != null
+          ? ReportingManager.fromJson(json['reporting_manager'])
+          : null,
+
+      teamInfo: json['team_info'] != null
+          ? TeamInfo.fromJson(json['team_info'])
+          : null,
+
+      user: json['user'] != null
+          ? ReportingManager.fromJson(json['user'])
+          : null,
     );
   }
 }
@@ -56,8 +71,8 @@ class Location {
 
   factory Location.fromJson(Map<String, dynamic> json) {
     return Location(
-      lat: (json['lat'] as num).toDouble(),
-      lon: (json['lon'] as num).toDouble(),
+      lat: (json['lat'] as num?)?.toDouble() ?? 0.0,
+      lon: (json['lon'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -67,7 +82,7 @@ class ReportingManager {
   final String designation;
   final String email;
   final int hierarchyLevel;
-  final String id;
+  final dynamic id;
   final String name;
   final String phone;
   final String role;
@@ -92,7 +107,7 @@ class ReportingManager {
       email: json['email'] ?? '',
       hierarchyLevel: json['hierarchy_level'] ?? 0,
       id: json['id'],
-      name: json['name'],
+      name: json['name'] ?? '',
       phone: json['phone'] ?? '',
       role: json['role'] ?? '',
       baseLocation: json['base_location'],
@@ -119,9 +134,10 @@ class TeamInfo {
     return TeamInfo(
       memberCount: json['member_count'] ?? 0,
       members: (json['members'] as List? ?? [])
+          .where((e) => e != null)
           .map((e) => Member.fromJson(e))
           .toList(),
-      teamId: json['team_id'],
+      teamId: json['team_id']?.toString() ?? '',
       teamLead: json['team_lead'] ?? '',
       teamName: json['team_name'] ?? '',
     );
@@ -131,7 +147,7 @@ class TeamInfo {
 class Member {
   final String designation;
   final String email;
-  final String id;
+  final dynamic id;
   final String name;
 
   Member({
@@ -146,7 +162,7 @@ class Member {
       designation: json['designation'] ?? '',
       email: json['email'] ?? '',
       id: json['id'],
-      name: json['name'],
+      name: json['name'] ?? '',
     );
   }
 }

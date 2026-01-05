@@ -9,7 +9,7 @@ class ApiEndpoints {
   // Punch-In / Punch-Out
 
   static const punchIn = '/api/punch_in';
-  static const punchOut = '/api/punch-out';
+  static const punchOut = '/api/punch_out';
 
   // Team lead / team
   static const teamLead = '/api/user/teamlead/teams';

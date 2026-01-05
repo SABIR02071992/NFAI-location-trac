@@ -49,7 +49,7 @@ class _IndividualPunchInState extends ConsumerState<IndividualPunchIn> {
     final state = ref.watch(punchInProvider);
 
     // 🔔 Provider listener (loader OFF + snackbars)
-    ref.listen<IndividualPunchInState>(punchInProvider, (prev, next) {
+    /*ref.listen<IndividualPunchInState>(punchInProvider, (prev, next) {
       if (_localLoading && next.isLoading == false) {
         setState(() {
           _localLoading = false;
@@ -75,7 +75,40 @@ class _IndividualPunchInState extends ConsumerState<IndividualPunchIn> {
           colorText: Colors.white,
         );
       }
+    });*/
+
+    ref.listen<IndividualPunchInState>(punchInProvider, (prev, next) {
+      if (_localLoading && next.isLoading == false) {
+        setState(() {
+          _localLoading = false;
+        });
+      }
+
+      // ✅ Punch-In success
+      if (prev?.isCheckedIn == false && next.isCheckedIn == true) {
+        Get.snackbar(
+          'Success',
+          next.response?.message ?? 'Punch-in successful',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+
+        // 🔹 Redirect to Home/Dashboard after punch-in
+        Future.microtask(() => Get.offAllNamed('/dashboard'));
+      }
+
+      if (next.error != null && next.error!.isNotEmpty) {
+        Get.snackbar(
+          'Error',
+          next.error!,
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
     });
+
 
     return Scaffold(
       appBar: const KAppBar(title: 'Individual Punch-In'),

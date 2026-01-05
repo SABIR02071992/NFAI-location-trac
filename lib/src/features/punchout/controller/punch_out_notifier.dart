@@ -17,16 +17,15 @@ StateNotifierProvider<PunchOutNotifier, PunchOutState>(
 class PunchOutNotifier extends StateNotifier<PunchOutState> {
   PunchOutNotifier() : super(const PunchOutState());
   final GetStorage storage = GetStorage();
-
-
   Future<void> punchOut({
     required double lat,
     required double lon,
+    required String sessionId, // ✅ yahi use karenge
   }) async {
+    print("🔹 punchOut started for sessionId: $sessionId, lat: $lat, lon: $lon");
+
     try {
       state = state.copyWith(isLoading: true, error: null);
-      final String sessionId = storage.read(KStorageKey.sessionId);
-
 
       final body = {
         "session_id": sessionId,
@@ -34,20 +33,18 @@ class PunchOutNotifier extends StateNotifier<PunchOutState> {
         "lon": lon,
       };
 
-      final response =
-      await ApiHelper.post(ApiEndpoints.punchOut, body: body);
+      print("🔹 punchOut API body: $body");
 
-      if (response['statusCode'] == 200 ||
-          response['statusCode'] == 201) {
-        final result =
-        PunchOutResponse.fromJson(response['data']);
+      final response = await ApiHelper.post(ApiEndpoints.punchOut, body: body);
 
-        state = state.copyWith(
-          isLoading: false,
-          response: result,
-        );
+      print("🔹 punchOut API response: $response");
 
-        // ✅ SUCCESS MESSAGE
+      if (response['statusCode'] == 200 || response['statusCode'] == 201) {
+        final result = PunchOutResponse.fromJson(response['data']);
+        print("✅ PunchOut Success: ${result.message}");
+
+        state = state.copyWith(isLoading: false, response: result);
+
         Get.snackbar(
           'Success',
           result.message,
@@ -56,15 +53,12 @@ class PunchOutNotifier extends StateNotifier<PunchOutState> {
           colorText: Colors.white,
         );
       } else {
-        final errorMessage =
-            response['data']?['error'] ??
-                response['data']?['message'] ??
-                'Punch-out failed';
+        final errorMessage = response['data']?['error'] ??
+            response['data']?['message'] ??
+            'Punch-out failed';
+        print("❌ PunchOut Error: $errorMessage");
 
-        state = state.copyWith(
-          isLoading: false,
-          error: errorMessage,
-        );
+        state = state.copyWith(isLoading: false, error: errorMessage);
 
         Get.snackbar(
           'Error',
@@ -74,11 +68,23 @@ class PunchOutNotifier extends StateNotifier<PunchOutState> {
           colorText: Colors.white,
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print("❌ Exception in punchOut: $e");
+      print(stackTrace);
+
       state = state.copyWith(
         isLoading: false,
-        error: 'Network error',
+        error: 'Network error: ${e.toString()}',
+      );
+
+      Get.snackbar(
+        'Error',
+        'Network error: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     }
   }
+
 }
