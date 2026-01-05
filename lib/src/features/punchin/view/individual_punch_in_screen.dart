@@ -48,35 +48,6 @@ class _IndividualPunchInState extends ConsumerState<IndividualPunchIn> {
   Widget build(BuildContext context) {
     final state = ref.watch(punchInProvider);
 
-    // 🔔 Provider listener (loader OFF + snackbars)
-    /*ref.listen<IndividualPunchInState>(punchInProvider, (prev, next) {
-      if (_localLoading && next.isLoading == false) {
-        setState(() {
-          _localLoading = false;
-        });
-      }
-
-      if (prev?.isCheckedIn == false && next.isCheckedIn == true) {
-        Get.snackbar(
-          'Success',
-          next.response?.message ?? 'Punch-in successful',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-      }
-
-      if (next.error != null && next.error!.isNotEmpty) {
-        Get.snackbar(
-          'Error',
-          next.error!,
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      }
-    });*/
-
     ref.listen<IndividualPunchInState>(punchInProvider, (prev, next) {
       if (_localLoading && next.isLoading == false) {
         setState(() {

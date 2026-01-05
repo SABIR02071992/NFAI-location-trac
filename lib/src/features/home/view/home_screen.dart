@@ -5,6 +5,9 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../utils/app_colors.dart';
 import '../../../utils/k_button.dart';
+import '../../../utils/k_snackbar.dart';
+import '../../../utils/location_helper.dart';
+import '../../../utils/location_permission.dart';
 import '../../punchout/controller/get_live_session_notifier.dart';
 import '../../punchout/controller/punch_out_notifier.dart';
 import '../../punchout/model/live_session_api_response_model.dart';
@@ -22,16 +25,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final storage = GetStorage();
   Timer? _timer;
   bool _isPunchOutLoading = false;
+  double? _lat;
+  double? _lng;
 
   @override
   void initState() {
     super.initState();
+    _getLocation();
 
     Future.microtask(() {
       ref.read(liveSessionProvider.notifier).getLiveSession();
     });
 
     _timer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _getLocation();
       ref.read(liveSessionProvider.notifier).getLiveSession();
     });
   }
@@ -253,9 +260,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               )
                   : KButton(
                 text: "Punch-Out",
-                onPressed: () =>
-                    _callPunchOutAPI(session.sessionId),
+                onPressed: () {
+
+
+                  // ✅ CHECK LAT-LONG FIRST
+                  if (_lat == null ||
+                      _lng == null ||
+                      _lat.toString().isEmpty ||
+                      _lng.toString().isEmpty) {
+
+
+                    Get.snackbar(
+                      'Error',
+                      'Please wait, fetching your Location...',
+                      snackPosition: SnackPosition.TOP,
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                    );
+                    return; // ❌ API CALL STOP
+                  }
+
+                  // ✅ CALL API ONLY IF LAT-LONG PRESENT
+                  _callPunchOutAPI(session.sessionId);
+                },
               ),
+
             ),
           ],
         ),
@@ -269,14 +298,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     try {
       await ref.read(punchOutProvider.notifier).punchOut(
-        lat: 0.0,
-        lon: 0.0,
+        lat: _lat!,
+        lon: _lng!,
         sessionId: sessionId,
       );
 
       ref.read(liveSessionProvider.notifier).getLiveSession();
     } finally {
       setState(() => _isPunchOutLoading = false);
+    }
+  }
+
+  Future<void> _getLocation() async {
+    final isReady =
+    await LocationPermissionService.checkGpsAndPermission();
+    if (!isReady) return;
+
+    final position = await LocationHelper.getCurrentLocation();
+    if (position != null) {
+      _lat = position.latitude;
+      _lng = position.longitude;
     }
   }
 }
